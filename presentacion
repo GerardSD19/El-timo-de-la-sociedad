@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>El timo de la sociedad de la información — José Antonio Marina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body, #root { width: 100%; height: 100%; overflow: hidden; }
+  body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; background: #08090E; }
+  @keyframes growBar { from { width: 0; } }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+  @keyframes fadeInLeft { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+/* ─── SVG Icons ─── */
+const I = {
+  ChevronLeft: '<polyline points="15 18 9 12 15 6"/>',
+  ChevronRight: '<polyline points="9 18 15 12 9 6"/>',
+  Tv: '<rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/>',
+  Globe: '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  Database: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
+  Cpu: '<rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>',
+  GraduationCap: '<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1 4 3 6 3s6-2 6-3v-5"/>',
+  AlertTriangle: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  BookOpen: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+  Quote: '<path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3z"/>',
+  Zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  Brain: '<path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2z"/>',
+  Shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  Eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+  EyeOff: '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>',
+  Wifi: '<path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>',
+  WifiOff: '<line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>',
+};
+
+function Ic({ name, size=24, color="currentColor", sw=2, style={} }) {
+  return React.createElement('svg', {
+    xmlns:"http://www.w3.org/2000/svg", width:size, height:size, viewBox:"0 0 24 24",
+    fill:"none", stroke:color, strokeWidth:sw, strokeLinecap:"round", strokeLinejoin:"round",
+    style, dangerouslySetInnerHTML:{ __html: I[name]||'' }
+  });
+}
+
+const TOTAL = 12;
+const C = {
+  bg:"#08090E", surface:"#111318", card:"#181B23", cardH:"#1E2130",
+  bdr:"rgba(255,255,255,0.07)", red:"#FF3B5C", redG:"rgba(255,59,92,0.15)",
+  redS:"rgba(255,59,92,0.08)", blue:"#3B82F6", cyan:"#22D3EE",
+  w:"#FFFFFF", t1:"#F1F2F6", t2:"#B0B4C3", t3:"#6B7084", dim:"rgba(255,255,255,0.04)",
+};
+const F = { h:"'Syne','Inter',system-ui,sans-serif", b:"'Inter',system-ui,sans-serif", m:"'JetBrains Mono','SF Mono',monospace" };
+
+/* ─── Editable text ─── */
+function E({ children, tag="span", style={}, className="" }) {
+  return React.createElement(tag, { style, className }, children);
+}
+
+/* ─── Backgrounds ─── */
+function Grid() {
+  return React.createElement('div', { style:{ position:'absolute',inset:0,pointerEvents:'none',overflow:'hidden',opacity:0.025 } },
+    React.createElement('div', { style:{ width:'100%',height:'100%',
+      backgroundImage:`linear-gradient(${C.w} 1px, transparent 1px), linear-gradient(90deg, ${C.w} 1px, transparent 1px)`,
+      backgroundSize:'60px 60px' }})
+  );
+}
+function Glow({ color=C.red, size=500, x="50%", y="50%", op=0.08 }) {
+  return React.createElement('div', { style:{ position:'absolute',pointerEvents:'none',left:x,top:y,width:size,height:size,
+    transform:'translate(-50%,-50%)',background:`radial-gradient(circle,${color} 0%,transparent 70%)`,opacity:op,filter:'blur(40px)' }});
+}
+
+/* ─── UI Atoms ─── */
+function Tag({ children, color=C.red }) {
+  return React.createElement('span', { style:{ display:'inline-block',fontSize:11,fontWeight:600,letterSpacing:'0.2em',textTransform:'uppercase',
+    padding:'4px 12px',borderRadius:999,color,border:`1px solid ${color}33`,background:`${color}10`,fontFamily:F.m }}, children);
+}
+function Card({ children, glow, style:s={} }) {
+  return React.createElement('div', { style:{ borderRadius:16,padding:24,background:C.card,border:`1px solid ${C.bdr}`,
+    boxShadow:glow?`0 0 40px ${C.redG}, inset 0 1px 0 rgba(255,255,255,0.04)`:'inset 0 1px 0 rgba(255,255,255,0.03)',...s }}, children);
+}
+function Badge({ icon, color=C.red, size=44 }) {
+  return React.createElement('div', { style:{ display:'inline-flex',alignItems:'center',justifyContent:'center',borderRadius:12,
+    width:size,height:size,background:`${color}12`,border:`1px solid ${color}25` }},
+    React.createElement(Ic, { name:icon, size:size*0.5, color, sw:2 })
+  );
+}
+
+/* anim wrapper — uses CSS animation, no useState reset bug */
+function A({ children, d=0, dir="up", style:s={} }) {
+  const anim = dir==="left" ? "fadeInLeft" : "fadeInUp";
+  return React.createElement('div', { style:{ animation:`${anim} 0.7s ease-out ${d}ms both`, ...s }}, children);
+}
+
+/* ═══════════════════════════════════════════════════════
+   12 SLIDES  — all text wrapped in E() for editing
+   ═══════════════════════════════════════════════════════ */
+
+function S1() {
+  return React.createElement('div', { style:{ position:'relative',width:'100%',height:'100%',display:'flex',alignItems:'center',overflow:'hidden',background:C.bg }},
+    React.createElement(Grid), React.createElement(Glow, { color:C.red,size:700,x:"75%",y:"40%",op:0.07 }), React.createElement(Glow, { color:C.blue,size:500,x:"20%",y:"70%",op:0.05 }),
+    React.createElement('div', { style:{ position:'relative',zIndex:10,width:'100%',maxWidth:1100,margin:'0 auto',padding:'0 64px' }},
+      React.createElement(A, { d:0 }, React.createElement(Tag, null, React.createElement(E, null, "Conferència · X Premis Comunicació de Masses"))),
+      React.createElement(A, { d:150 },
+        React.createElement('h1', { style:{ marginTop:32,fontWeight:900,lineHeight:1,letterSpacing:'-0.02em',fontSize:'clamp(3.2rem,7.5vw,6.5rem)',color:C.w,fontFamily:F.h }},
+          React.createElement(E, { tag:'span' }, "El timo de la"), React.createElement('br'),
+          React.createElement('span', { style:{ color:C.red,position:'relative',display:'inline-block' }},
+            React.createElement(E, { tag:'span' }, "sociedad"),
+            React.createElement('span', { style:{ position:'absolute',bottom:-4,left:0,right:0,height:3,borderRadius:99,background:C.red,opacity:0.5 }})
+          ), React.createElement(E, { tag:'span' }, " de la"), React.createElement('br'),
+          React.createElement(E, { tag:'span' }, "información")
+        )
+      ),
+      React.createElement(A, { d:400 },
+        React.createElement('div', { style:{ display:'flex',alignItems:'center',gap:20,marginTop:40 }},
+          React.createElement('div', { style:{ width:56,height:2,borderRadius:99,background:C.red }}),
+          React.createElement('div', null,
+            React.createElement(E, { tag:'div', style:{ fontSize:20,fontWeight:500,color:C.t1,fontFamily:F.h }}, "José Antonio Marina"),
+            React.createElement(E, { tag:'div', style:{ fontSize:14,marginTop:4,color:C.t3 }}, "Filósofo y ensayista · Toledo, 1939")
+          )
+        )
+      )
+    ),
+    React.createElement('div', { style:{ position:'absolute',top:32,right:32,width:80,height:80,border:`2px solid ${C.red}22`,borderRadius:'0 16px 0 0',borderRight:'none',borderBottom:'none' }})
+  );
+}
+
+function S2() {
+  const items = [
+    { n:"01",t:"La era de la imagen",s:"TV y cultura audiovisual",ic:"Tv",co:C.red },
+    { n:"02",t:"La sociedad de la red",s:"Internet y espejismo del saber",ic:"Globe",co:C.blue },
+    { n:"03",t:"Paradojas de la información",s:"Abundancia vs. comprensión",ic:"Database",co:C.cyan },
+    { n:"04",t:"La metáfora del ordenador",s:"La máquina define al humano",ic:"Cpu",co:C.red },
+    { n:"05",t:"Sociedad del aprendizaje",s:"Autonomía como antídoto",ic:"GraduationCap",co:C.blue },
+  ];
+  return React.createElement('div', { style:{ position:'relative',width:'100%',height:'100%',display:'flex',alignItems:'center',overflow:'hidden',background:C.bg }},
+    React.createElement(Grid), React.createElement(Glow, { color:C.blue,size:600,x:"80%",y:"30%",op:0.05 }),
+    React.createElement('div', { style:{ position:'relative',zIndex:10,width:'100%',maxWidth:960,margin:'0 auto',padding:'0 64px' }},
+      React.createElement(A, null, React.createElement(Tag, null, React.createElement(E, null, "Estructura")),
+        React.createElement(E, { tag:'h2', style:{ marginTop:16,fontWeight:700,fontSize:'clamp(1.8rem,3.5vw,2.4rem)',letterSpacing:'-0.02em',color:C.w,fontFamily:F.h }}, "Cinco actos de una denuncia")),
+      React.createElement('div', { style:{ marginTop:40,display:'flex',flexDirection:'column',gap:12 }},
+        items.map((s,i) => React.createElement(A, { key:i, d:150+i*120 },
+          React.createElement('div', { style:{ display:'flex',alignItems:'center',gap:20,padding:20,borderRadius:16,background:C.card,border:`1px solid ${C.bdr}` }},
+            React.createElement('div', { style:{ fontWeight:900,fontSize:'1.5rem',width:48,textAlign:'center',color:s.co,fontFamily:F.m }}, s.n),
+            React.createElement('div', { style:{ width:1,height:32,borderRadius:99,background:C.bdr }}),
+            React.createElement('div', { style:{ flex:1 }},
+              React.createElement(E, { tag:'div', style:{ fontSize:18,fontWeight:700,color:C.t1,fontFamily:F.h }}, s.t),
+              React.createElement(E, { tag:'div', style:{ fontSize:14,marginTop:2,color:C.t3 }}, s.s)),
+            React.createElement(Badge, { icon:s.ic, color:s.co, size:40 })
+          )
+        ))
+      )
+    )
+  );
+}
+
+function S3() {
+  const feats = [{ic:"Zap",t:"Tecnología sofisticada en evolución vertiginosa"},{ic:"Globe",t:"Actividad económica desligada de la geografía"},{ic:"Database",t:"Red global con gigantescos bancos de datos"},{ic:"Eye",t:"Cultura dominada por la imagen"}];
+  return React.createElement('div', { style:{ position:'relative',width:'100%',height:'100%',display:'flex',alignItems:'center',overflow:'hidden',background:C.bg }},
+    React.createElement(Grid), React.createElement(Glow, { color:C.blue,size:500,x:"15%",y:"35%",op:0.06 }), React.createElement(Glow, { color:C.red,size:400,x:"85%",y:"65%",op:0.05 }),
+    React.createElement('div', { style:{ position:'relative',zIndex:10,width:'100%',maxWidth:1100,margin:'0 auto',padding:'0 64px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:56,alignItems:'center' }},
+      React.createElement('div', null,
+        React.createElement(A, null, React.createElement(Tag, { color:C.blue }, React.createElement(E, null, "Contexto"))),
+        React.createElement(A, { d:100 }, React.createElement(E, { tag:'h2', style:{ marginTop:16,fontWeight:700,fontSize:'clamp(1.8rem,3.2vw,2.6rem)',letterSpacing:'-0.02em',color:C.w,fontFamily:F.h }}, "¿Qué es la sociedad de la información?")),
+        React.createElement(A, { d:250 }, React.createElement(Card, { glow:true, style:{ marginTop:32 }},
+          React.createElement(Ic, { name:"Quote", size:20, color:C.red, style:{ opacity:0.5,marginBottom:12 }}),
+          React.createElement(E, { tag:'p', style:{ fontSize:18,lineHeight:1.6,fontStyle:'italic',fontWeight:500,color:C.t1 }}, "«La nueva sociedad será poscapitalista y su recurso primario será el saber.»"),
+          React.createElement(E, { tag:'div', style:{ marginTop:16,fontSize:12,color:C.t3,fontFamily:F.m }}, "— Peter Drucker")))
+      ),
+      React.createElement('div', { style:{ display:'flex',flexDirection:'column',gap:12 }},
+        feats.map((f,i) => React.createElement(A, { key:i, d:350+i*120, dir:"left" },
+          React.createElement('div', { style:{ display:'flex',alignItems:'center',gap:16,padding:16,borderRadius:12,background:C.card,border:`1px solid ${C.bdr}` }},
+            React.createElement(Badge, { icon:f.ic, color:C.blue, size:36 }),
+            React.createElement(E, { tag:'p', style:{ fontSize:15,fontWeight:500,color:C.t1 }}, f.t)))),
+        React.createElement(A, { d:850, dir:"left" },
+          React.createElement('div', { style:{ marginTop:16,padding:16,borderRadius:12,background:C.redS,border:`1px solid ${C.red}20` }},
+            React.createElement(E, { tag:'p', style:{ fontSize:14,fontStyle:'italic',lineHeight:1.6,color:C.t2 }}, "Castells: «Nuestras sociedades se estructuran cada vez más en torno a una posición bipolar entre la red y el yo.»")))
+      )
+    )
+  );
+}
+
+function S4() {
+  return React.createElement('div', { style:{ position:'relative',width:'100%',height:'100%',display:'flex',overflow:'hidden',background:C.bg }},
+    React.createElement(Grid),
+    React.createElement('div', { style:{ width:'38%',position:'relative',display:'flex',flexDirection:'column',justifyContent:'center',padding:'0 56px',background:`linear-gradient(160deg,${C.surface},${C.card})` }},
+      React.createElement(Glow, { color:C.red,size:350,x:"50%",y:"30%",op:0.08 }),
+      React.createElement('div', { style:{ position:'relative',zIndex:10 }},
+        React.createElement(A, null,
+          React.createElement('div', { style:{ display:'flex',alignItems:'center',gap:12,marginBottom:24 }}, React.createElement(Badge, { icon:"Tv",color:C.red }), React.createElement('span', { style:{ fontWeight:900,fontSize:'1.8rem',color:C.red,fontFamily:F.m }}, "01")),
+          React.createElement(E, { tag:'h2', style:{ fontSize:'2.4rem',fontWeight:900,letterSpacing:'-0.02em',lineHeight:1.1,color:C.w,fontFamily:F.h }}, "La era de la imagen"),
+          React.createElement('div', { style:{ width:48,height:2,marginTop:20,borderRadius:99,background:C.red }}),
+          React.createElement(E, { tag:'p', style:{ fontSize:14,marginTop:16,lineHeight:1.6,color:C.t3 }}, "La TV como primer cambio social tecnológico masivo")
+        ))
+    ),
+    React.createElement('div', { style:{ flex:1,display:'flex',flexDirection:'column',justifyContent:'center',padding:'0 56px' }},
+      React.createElement(A, { d:150 }, React.createElement(E, { tag:'p', style:{ fontSize:20,fontWeight:600,lineHeight:1.5,marginBottom:40,color:C.t1,fontFamily:F.h }}, "La imagen seduce por su rapidez, pero el razonamiento requiere el «curso apacible de la palabra»")),
+      React.createElement('div', { style:{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:24,marginBottom:40 }},
+        React.createElement(A, { d:300 }, React.createElement(Card, { style:{ textAlign:'center',paddingTop:32,paddingBottom:32 }},
+          React.createElement(E, { tag:'div', style:{ fontWeight:900,fontSize:'clamp(3rem,6vw,5rem)',color:C.red,lineHeight:1,fontFamily:F.h }}, "21 min"),
+          React.createElement(E, { tag:'div', style:{ marginTop:8,fontSize:14,maxWidth:200,margin:'8px auto 0',lineHeight:1.4,color:C.t3 }}, "Tiempo de un telediario para resumir el universo del día"))),
+        React.createElement(A, { d:450 }, React.createElement(Card, { style:{ textAlign:'center',paddingTop:32,paddingBottom:32 }},
+          React.createElement(E, { tag:'div', style:{ fontWeight:900,fontSize:'clamp(3rem,6vw,5rem)',color:C.blue,lineHeight:1,fontFamily:F.h }}, "7 seg"),
+          React.createElement(E, { tag:'div', style:{ marginTop:8,fontSize:14,maxWidth:200,margin:'8px auto 0',lineHeight:1.4,color:C.t3 }}, "Intervención ideal en debates políticos en EEUU")))
+      ),
+      React.createElement(A, { d:700 }, React.createElement(Card, { glow:true },
+        React.createElement(Tag, null, React.createElement(E, null, "Tesis de Marina")),
+        React.createElement(E, { tag:'p', style:{ marginTop:12,fontSize:15,lineHeight:1.6,fontWeight:500,color:C.t1 }}, "Una imagen vale más que mil palabras… pero hacen falta mil palabras para analizar una imagen. Surfear la información nos condena a no entender nada.")))
+    )
+  );
+}
+
+function S5() {
+  const bars=[{l:"Mercados financieros",v:64},{l:"Políticos",v:52},{l:"Medios de comunicación",v:50}];
+  const pows=[{n:"Coercitivo",d:"Amenaza y castigo",co:C.t3},{n:"Compensatorio",d:"Concede premios",co:C.blue},{n:"Condicionante",d:"Modifica las creencias",co:C.red}];
+  return React.createElement('div', { style:{ position:'relative',width:'100%',height:'100%',display:'flex',alignItems:'center',overflow:'hidden',background:C.bg }},
+    React.createElement(Grid), React.createElement(Glow, { color:C.red,size:500,x:"70%",y:"25%",op:0.06 }),
+    React.createElement('div', { style:{ position:'relative',zIndex:10,width:'100%',maxWidth:1100,margin:'0 auto',padding:'0 64px' }},
+      React.createElement(A, null, React.createElement(Tag, null, React.createElement(E, null, "Poder no representativo")), React.createElement(E, { tag:'h2', style:{ marginTop:16,fontWeight:700,fontSize:'1.8rem',letterSpacing:'-0.02em',color:C.w,fontFamily:F.h }}, "¿Quién manda en el mundo?")),
+      React.createElement('div', { style:{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:48,marginTop:40 }},
+        React.createElement('div', null,
+          React.createElement(A, { d:150 }, React.createElement(E, { tag:'div', style:{ fontSize:12,marginBottom:24,letterSpacing:'0.15em',textTransform:'uppercase',color:C.t3,fontFamily:F.m }}, "Encuesta Le Monde")),
+          bars.map((b,i) => React.createElement(A, { key:i, d:250+i*150 },
+            React.createElement('div', { style:{ marginBottom:24 }},
+              React.createElement('div', { style:{ display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:8 }},
+                React.createElement(E, { tag:'span', style:{ fontSize:15,fontWeight:500,color:C.t1 }}, b.l),
+                React.createElement('span', { style:{ fontSize:20,fontWeight:900,color:C.red,fontFamily:F.m }}, b.v+"%")),
+              React.createElement('div', { style:{ height:12,borderRadius:99,overflow:'hidden',background:C.dim }},
+                React.createElement('div', { style:{ height:'100%',borderRadius:99,width:b.v+'%',background:`linear-gradient(90deg,${C.blue},${C.red})`,animation:`growBar 1.2s ease-out ${0.4+i*0.15}s both` }})))))),
+        React.createElement('div', null,
+          React.createElement(A, { d:200 }, React.createElement(E, { tag:'div', style:{ fontSize:12,marginBottom:24,letterSpacing:'0.15em',textTransform:'uppercase',color:C.t3,fontFamily:F.m }}, "Tipología del poder — Galbraith")),
+          pows.map((p,i) => React.createElement(A, { key:i, d:350+i*150, dir:"left" },
+            React.createElement('div', { style:{ marginBottom:12,padding:20,borderRadius:12,background:p.co===C.red?C.redS:C.card,border:`1px solid ${p.co===C.red?C.red+'25':C.bdr}` }},
+              React.createElement('div', { style:{ display:'flex',alignItems:'center',gap:12 }},
+                React.createElement('div', { style:{ width:12,height:12,borderRadius:99,background:p.co }}),
+                React.createElement(E, { tag:'span', style:{ fontSize:15,fontWeight:700,color:p.co===C.red?C.red:C.t1,fontFamily:F.h }}, p.n)),
+              React.createElement(E, { tag:'div', style:{ fontSize:14,marginTop:4,marginLeft:24,color:C.t3 }}, p.d)))))
+      ),
+      React.createElement(A, { d:900 },
+        React.createElement('div', { style:{ marginTop:24,display:'flex',alignItems:'flex-start',gap:12,padding:16,borderRadius:12,background:`${C.red}08`,border:`1px solid ${C.red}15` }},
+          React.createElement(Ic, { name:"AlertTriangle",size:18,color:C.red,style:{ marginTop:2,flexShrink:0 }}),
+          React.createElement(E, { tag:'p', style:{ fontSize:14,fontWeight:500,color:C.t1 }}, "Caso The Sun: Murdoch apoya a Blair tras reuniones privadas. ¿Intereses del país, de los lectores, o de Murdoch?")))
+    )
+  );
+}
+
+function S6() {
+  const left=["Gigantesco banco de información","Acceso rapidísimo y global","Operaciones comerciales","Foros de discusión y colaboración","Aparente democratización"];
+  const right=["Estar enlazados ≠ saber","Solo tenemos acceso, no conocimiento","El ser humano: «cuello de botella» de 50 bits/s","La red crea un espejismo de sabiduría","Quien sabe aprovecha; los demás se conforman"];
+  return React.createElement('div', { style:{ position:'relative',width:'100%',height:'100%',display:'flex',alignItems:'center',overflow:'hidden',background:C.bg }},
+    React.createElement(Grid), React.createElement(Glow, { color:C.blue,size:500,x:"30%",y:"35%",op:0.05 }),
+    React.createElement('div', { style:{ position:'relative',zIndex:10,width:'100%',maxWidth:1100,margin:'0 auto',padding:'0 64px' }},
+      React.createElement(A, null,
+        React.createElement('div', { style:{ display:'flex',alignItems:'center',gap:16,marginBottom:12 }}, React.createElement('span', { style:{ fontWeight:900,fontSize:'1.8rem',color:C.blue,fontFamily:F.m }}, "02"), React.createElement('div', { style:{ flex:1,height:1,background:`${C.blue}33` }})),
+        React.createElement(E, { tag:'h2', style:{ fontWeight:700,fontSize:'1.8rem',letterSpacing:'-0.02em',color:C.w,fontFamily:F.h }}, "La sociedad de la red")),
+      React.createElement('div', { style:{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:32,marginTop:40 }},
+        React.createElement(A, { d:200 }, React.createElement('div', null,
+          React.createElement('div', { style:{ display:'flex',alignItems:'center',gap:8,marginBottom:20 }}, React.createElement(Ic, { name:"Wifi",size:16,color:C.blue }), React.createElement('span', { style:{ fontSize:12,letterSpacing:'0.15em',textTransform:'uppercase',fontWeight:600,color:C.blue,fontFamily:F.m }}, "Lo que ofrece")),
+          React.createElement('div', { style:{ display:'flex',flexDirection:'column',gap:8 }}, left.map((t,i) =>
+            React.createElement('div', { key:i, style:{ display:'flex',alignItems:'center',gap:12,padding:14,borderRadius:12,background:C.card,border:`1px solid ${C.bdr}` }},
+              React.createElement('div', { style:{ width:8,height:8,borderRadius:99,flexShrink:0,background:C.blue }}), React.createElement(E, { tag:'span', style:{ fontSize:14,fontWeight:500,color:C.t1 }}, t)))))),
+        React.createElement(A, { d:350, dir:"left" }, React.createElement('div', null,
+          React.createElement('div', { style:{ display:'flex',alignItems:'center',gap:8,marginBottom:20 }}, React.createElement(Ic, { name:"WifiOff",size:16,color:C.red }), React.createElement('span', { style:{ fontSize:12,letterSpacing:'0.15em',textTransform:'uppercase',fontWeight:600,color:C.red,fontFamily:F.m }}, "Lo que Marina cuestiona")),
+          React.createElement('div', { style:{ display:'flex',flexDirection:'column',gap:8 }}, right.map((t,i) =>
+            React.createElement('div', { key:i, style:{ display:'flex',alignItems:'center',gap:12,padding:14,borderRadius:12,background:C.redS,border:`1px solid ${C.red}15` }},
+              React.createElement('div', { style:{ width:8,height:8,borderRadius:99,flexShrink:0,background:C.red }}), React.createElement(E, { tag:'span', style:{ fontSize:14,fontWeight:500,color:C.t1 }}, t))))))
+      ),
+      React.createElement(A, { d:800 }, React.createElement('div', { style:{ marginTop:32,padding:20,borderRadius:12,background:C.card,border:`1px solid ${C.bdr}` }},
+        React.createElement(Ic, { name:"Quote",size:16,color:C.red,style:{ opacity:0.4,marginBottom:8 }}),
+        React.createElement(E, { tag:'p', style:{ fontSize:15,fontStyle:'italic',fontWeight:500,lineHeight:1.6,color:C.t1 }}, "«Sólo poseemos la información que hemos incorporado a nuestra memoria, y que nos va a permitir comprender lo que pasa, someternos o rebelarnos, aceptar o criticar.»")))
+    )
+  );
+}
+
+function S7() {
+  const pxs=[{l:"Disponibilidad",r:"Capacidad",d:"Tener acceso a la información no significa poder disponer de ella con criterio."},{l:"Rapidez",r:"Comprensión",d:"La evolución es tan rápida que no sabemos dónde mirar ni qué es relevante."},{l:"Igualdad aparente",r:"Igualdad real",d:"Quien sabe, aprovecha; los demás se quedan en el «rebaño informático»."}];
+  return React.createElement('div', { style:{ position:'relative',width:'100%',height:'100%',display:'flex',alignItems:'center',overflow:'hidden',background:C.bg }},
+    React.createElement(Grid), React.createElement(Glow, { color:C.cyan,size:500,x:"20%",y:"50%",op:0.05 }),
+    React.createElement('div', { style:{ position:'relative',zIndex:10,width:'100%',maxWidth:1100,margin:'0 auto',padding:'0 64px',display:'grid',gridTemplateColumns:'2fr 3fr',gap:48,alignItems:'center' }},
+      React.createElement('div', null,
+        React.createElement(A, null, React.createElement('div', { style:{ display:'flex',alignItems:'center',gap:16,marginBottom:12 }}, React.createElement('span', { style:{ fontWeight:900,fontSize:'1.8rem',color:C.cyan,fontFamily:F.m }}, "03"), React.createElement('div', { style:{ flex:1,height:1,background:`${C.cyan}33` }})),
+          React.createElement(E, { tag:'h2', style:{ fontWeight:700,fontSize:'1.8rem',letterSpacing:'-0.02em',color:C.w,fontFamily:F.h }}, "Las paradojas")),
+        React.createElement(A, { d:250 }, React.createElement(Card, { glow:true, style:{ marginTop:32,textAlign:'center' }},
+          React.createElement(E, { tag:'div', style:{ fontWeight:900,lineHeight:1,fontSize:'clamp(2.8rem,5vw,4.2rem)',color:C.red,fontFamily:F.h }}, "1.200.000"),
+          React.createElement(E, { tag:'p', style:{ marginTop:12,fontSize:14,fontWeight:500,color:C.t2 }}, "referencias al buscar «Sentimientos» en Internet"),
+          React.createElement('div', { style:{ width:40,height:1,margin:'16px auto 12px',borderRadius:99,background:C.bdr }}),
+          React.createElement(E, { tag:'p', style:{ fontSize:13,fontStyle:'italic',color:C.t3 }}, "¿Qué hacemos con esta avalancha de información bruta?")))
+      ),
+      React.createElement('div', { style:{ display:'flex',flexDirection:'column',gap:16 }},
+        pxs.map((p,i) => React.createElement(A, { key:i, d:400+i*200, dir:"left" }, React.createElement(Card, null,
+          React.createElement('div', { style:{ display:'flex',alignItems:'center',gap:12,marginBottom:8 }},
+            React.createElement(E, { tag:'span', style:{ fontSize:15,fontWeight:700,color:C.w,fontFamily:F.h }}, p.l),
+            React.createElement('span', { style:{ fontWeight:900,fontSize:18,color:C.red,fontFamily:F.m }}, "≠"),
+            React.createElement(E, { tag:'span', style:{ fontSize:15,fontWeight:700,color:C.w,fontFamily:F.h }}, p.r)),
+          React.createElement(E, { tag:'p', style:{ fontSize:14,color:C.t2 }}, p.d)))),
+        React.createElement(A, { d:1100 }, React.createElement('div', { style:{ display:'flex',alignItems:'flex-start',gap:12,padding:16,borderRadius:12,marginTop:8,background:C.redS }},
+          React.createElement(Ic, { name:"Zap",size:16,color:C.red,style:{ marginTop:2,flexShrink:0 }}),
+          React.createElement(E, { tag:'p', style:{ fontSize:14,fontWeight:500,color:C.t1 }}, "Marina propone dos especialistas del futuro: los que transmiten información y los que la seleccionan.")))
+      )
+    )
+  );
+}
+
+function S8() {
+  const ws=["Los sistemas quedan fuera de control","El software queda obsoleto antes de ser aprovechado","Sectores comercial y militar han perdido el control","«El mundo puede estar cayendo en una trampa»"];
+  return React.createElement('div', { style:{ position:'relative',width:'100%',height:'100%',display:'flex',alignItems:'center',overflow:'hidden',background:C.bg }},
+    React.createElement(Grid), React.createElement(Glow, { color:"#9333EA",size:500,x:"50%",y:"35%",op:0.06 }),
+    React.createElement('div', { style:{ position:'relative',zIndex:10,width:'100%',maxWidth:1100,margin:'0 auto',padding:'0 64px' }},
+      React.createElement(A, null,
+        React.createElement('div', { style:{ display:'flex',alignItems:'center',gap:16,marginBottom:12 }}, React.createElement('span', { style:{ fontWeight:900,fontSize:'1.8rem',color:C.red,fontFamily:F.m }}, "04"), React.createElement('div', { style:{ flex:1,height:1,background:`${C.red}33` }})),
+        React.createElement(E, { tag:'h2', style:{ fontWeight:700,fontSize:'1.8rem',letterSpacing:'-0.02em',color:C.w,fontFamily:F.h }}, "Los peligros de la metáfora del ordenador"),
+        React.createElement(E, { tag:'p', style:{ marginTop:8,fontSize:16,fontStyle:'italic',color:C.t3 }}, "La informática está determinando la forma de entender al sujeto humano.")),
+      React.createElement('div', { style:{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:32,marginTop:40 }},
+        React.createElement(A, { d:250 }, React.createElement(Card, { style:{ height:'100%' }},
+          React.createElement('div', { style:{ display:'flex',alignItems:'center',gap:12,marginBottom:20 }},
+            React.createElement(Badge, { icon:"AlertTriangle",color:C.red }),
+            React.createElement('div', null, React.createElement(E, { tag:'div', style:{ fontWeight:700,fontSize:15,color:C.w,fontFamily:F.h }}, "Joseph Weizenbaum"), React.createElement(E, { tag:'div', style:{ fontSize:12,color:C.t3 }}, "Pionero IA · Creador de ELIZA"))),
+          React.createElement('div', { style:{ display:'flex',flexDirection:'column',gap:12 }},
+            ws.map((w,i) => React.createElement('div', { key:i, style:{ display:'flex',alignItems:'flex-start',gap:12 }},
+              React.createElement('div', { style:{ width:6,height:6,borderRadius:99,marginTop:7,flexShrink:0,background:C.red }}),
+              React.createElement(E, { tag:'p', style:{ fontSize:14,fontWeight:500,color:C.t1 }}, w)))))),
+        React.createElement(A, { d:400, dir:"left" }, React.createElement(Card, { glow:true, style:{ height:'100%' }},
+          React.createElement('div', { style:{ display:'flex',alignItems:'center',gap:12,marginBottom:20 }},
+            React.createElement(Badge, { icon:"Brain",color:C.w }),
+            React.createElement(E, { tag:'div', style:{ fontWeight:700,fontSize:15,color:C.w,fontFamily:F.h }}, "El ordenador como modelo humano")),
+          React.createElement(E, { tag:'p', style:{ fontSize:14,lineHeight:1.6,marginBottom:20,color:C.t2 }}, "Ha pasado de copiar habilidades de la inteligencia a convertirse en modelo explicativo de esta."),
+          React.createElement('div', { style:{ padding:16,borderRadius:12,background:C.redS,border:`1px solid ${C.red}20` }},
+            React.createElement(E, { tag:'p', style:{ fontSize:14,fontWeight:700,lineHeight:1.6,color:C.red }}, "Pensar que el hombre es solo un ordenador en base orgánica produce una peligrosa devaluación del ser humano."))))
+      )
+    )
+  );
+}
+
+function S9() {
+  const ts=[{n:"1",t:"Timo de la libertad",p:"Se presenta como liberadora",r:"Produce sistemas solapados de dominio y sumisión"},{n:"2",t:"Timo de la igualdad",p:"Parece favorecer la igualdad",r:"Produce o mantiene todo tipo de desigualdades"},{n:"3",t:"Timo de la humanidad",p:"Aparenta servir al humano",r:"Convierte al humano en «basura biográfica intercambiable»"}];
+  return React.createElement('div', { style:{ position:'relative',width:'100%',height:'100%',display:'flex',alignItems:'center',overflow:'hidden',background:C.bg }},
+    React.createElement(Grid), React.createElement(Glow, { color:C.red,size:600,x:"50%",y:"45%",op:0.06 }),
+    React.createElement('div', { style:{ position:'relative',zIndex:10,width:'100%',maxWidth:960,margin:'0 auto',padding:'0 64px' }},
+      React.createElement(A, null, React.createElement(Tag, null, React.createElement(E, null, "El núcleo de la denuncia")),
+        React.createElement(E, { tag:'h2', style:{ marginTop:16,fontWeight:700,fontSize:'clamp(2rem,3.5vw,3rem)',letterSpacing:'-0.02em',color:C.w,fontFamily:F.h }}, "El triple timo")),
+      React.createElement('div', { style:{ display:'flex',flexDirection:'column',gap:16,marginTop:40 }},
+        ts.map((t,i) => React.createElement(A, { key:i, d:200+i*200 },
+          React.createElement('div', { style:{ padding:20,borderRadius:16,background:C.card,border:`1px solid ${C.bdr}` }},
+            React.createElement('div', { style:{ display:'flex',alignItems:'flex-start',gap:20 }},
+              React.createElement('div', { style:{ width:44,height:44,borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:18,flexShrink:0,background:C.red,color:C.w,fontFamily:F.m }}, t.n),
+              React.createElement('div', { style:{ flex:1 }},
+                React.createElement(E, { tag:'h3', style:{ fontSize:18,fontWeight:700,color:C.w,fontFamily:F.h }}, t.t),
+                React.createElement('div', { style:{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginTop:12 }},
+                  React.createElement('div', { style:{ display:'flex',alignItems:'flex-start',gap:8 }},
+                    React.createElement(Ic, { name:"Eye",size:14,color:C.t3,style:{ marginTop:2,flexShrink:0 }}),
+                    React.createElement('div', null, React.createElement('div', { style:{ fontSize:10,textTransform:'uppercase',letterSpacing:'0.15em',marginBottom:2,color:C.t3,fontFamily:F.m }}, "Promesa"), React.createElement(E, { tag:'p', style:{ fontSize:14,color:C.t2 }}, t.p))),
+                  React.createElement('div', { style:{ display:'flex',alignItems:'flex-start',gap:8 }},
+                    React.createElement(Ic, { name:"EyeOff",size:14,color:C.red,style:{ marginTop:2,flexShrink:0 }}),
+                    React.createElement('div', null, React.createElement('div', { style:{ fontSize:10,textTransform:'uppercase',letterSpacing:'0.15em',marginBottom:2,color:C.red,fontFamily:F.m }}, "Realidad"), React.createElement(E, { tag:'p', style:{ fontSize:14,fontWeight:600,color:C.red }}, t.r)))
+                ))
+            ))
+        ))),
+
+    )
+  );
+}
+
+function S10() {
+  const ps=[{ic:"BookOpen",t:"Conocimiento propio",d:"Solo desde lo que sabemos podemos comprender y juzgar lo que leemos en pantalla.",co:C.blue},{ic:"Brain",t:"Pensamiento crítico",d:"Capacidad de proponernos fines, evaluarlos y realizarlos. No basta con procesar datos.",co:C.red},{ic:"Shield",t:"Autonomía personal",d:"No es innata: es un esfuerzo constante por mantener el rumbo frente a vientos adversos.",co:C.cyan}];
+  return React.createElement('div', { style:{ position:'relative',width:'100%',height:'100%',display:'flex',alignItems:'center',overflow:'hidden',background:C.bg }},
+    React.createElement(Grid), React.createElement(Glow, { color:C.blue,size:600,x:"50%",y:"30%",op:0.06 }),
+    React.createElement('div', { style:{ position:'relative',zIndex:10,width:'100%',maxWidth:1100,margin:'0 auto',padding:'0 64px' }},
+      React.createElement(A, null, React.createElement('div', { style:{ display:'flex',alignItems:'center',gap:16,marginBottom:12 }}, React.createElement('span', { style:{ fontWeight:900,fontSize:'1.8rem',color:C.blue,fontFamily:F.m }}, "05"), React.createElement(Badge, { icon:"GraduationCap",color:C.blue })),
+        React.createElement(E, { tag:'h2', style:{ fontWeight:700,fontSize:'1.8rem',letterSpacing:'-0.02em',color:C.w,fontFamily:F.h }}, "El antídoto: sociedad del aprendizaje")),
+      React.createElement(A, { d:200 }, React.createElement('div', { style:{ marginTop:32,padding:24,borderRadius:16,background:C.redS,border:`1px solid ${C.red}20` }},
+        React.createElement(E, { tag:'p', style:{ fontSize:18,fontWeight:500,lineHeight:1.6,color:C.t1 }}, "«No se trata de conectarse a la red, sino de tener los conocimientos necesarios para aprovecharse de ella.»"))),
+      React.createElement('div', { style:{ display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:24,marginTop:32 }},
+        ps.map((p,i) => React.createElement(A, { key:i, d:400+i*180 },
+          React.createElement('div', { style:{ borderRadius:16,padding:24,height:'100%',display:'flex',flexDirection:'column',background:C.card,border:`1px solid ${C.bdr}` }},
+            React.createElement(Badge, { icon:p.ic,color:p.co,size:48 }),
+            React.createElement(E, { tag:'h3', style:{ fontSize:18,fontWeight:700,marginTop:20,marginBottom:12,color:C.w,fontFamily:F.h }}, p.t),
+            React.createElement(E, { tag:'p', style:{ fontSize:14,flex:1,lineHeight:1.6,color:C.t2 }}, p.d)))))
+    )
+  );
+}
+
+function S11() {
+  return React.createElement('div', { style:{ position:'relative',width:'100%',height:'100%',display:'flex',alignItems:'center',overflow:'hidden',background:C.bg }},
+    React.createElement(Grid), React.createElement(Glow, { color:C.red,size:400,x:"65%",y:"35%",op:0.05 }),
+    React.createElement('div', { style:{ position:'relative',zIndex:10,width:'100%',maxWidth:1100,margin:'0 auto',padding:'0 64px',display:'grid',gridTemplateColumns:'3fr 2fr',gap:48,alignItems:'center' }},
+      React.createElement('div', null,
+        React.createElement(A, null, React.createElement(Tag, null, React.createElement(E, null, "Caso ilustrativo"))),
+        React.createElement(A, { d:100 }, React.createElement(E, { tag:'h2', style:{ marginTop:16,fontWeight:700,fontSize:'1.8rem',letterSpacing:'-0.02em',color:C.w,fontFamily:F.h }}, "Howard Rheingold")),
+        React.createElement(A, { d:250 }, React.createElement(Card, { style:{ marginTop:24,marginBottom:20 }},
+          React.createElement('div', { style:{ display:'flex',alignItems:'center',gap:8,marginBottom:12 }}, React.createElement(Ic, { name:"BookOpen",size:16,color:C.blue }), React.createElement(E, { tag:'span', style:{ fontSize:12,fontWeight:600,color:C.blue,fontFamily:F.m }}, "La comunidad virtual (Gedisa)")),
+          React.createElement(E, { tag:'p', style:{ fontSize:15,lineHeight:1.6,fontWeight:500,color:C.t1 }}, "Invitado a asesorar al Congreso de EEUU sobre telecomunicaciones. Admite no ser experto, pero en 6 semanas recopiló 200 páginas de «consejos expertos» de una comunidad virtual."),
+          React.createElement(E, { tag:'p', style:{ fontSize:14,fontStyle:'italic',marginTop:12,color:C.t3 }}, "«No habría podido integrar tantos conocimientos en toda una carrera académica.»"))),
+        React.createElement(A, { d:500 }, React.createElement('div', { style:{ padding:20,borderRadius:12,background:C.red }},
+          React.createElement(E, { tag:'p', style:{ fontSize:15,fontWeight:700,color:C.w }}, "Marina: «Esto es una impostura sin paliativos. Es la glorificación de la simpleza.»")))
+      ),
+      React.createElement(A, { d:400, dir:"left" }, React.createElement(Card, { glow:true, style:{ height:'100%' }},
+        React.createElement(Ic, { name:"Zap",size:24,color:C.red,style:{ marginBottom:16 }}),
+        React.createElement(E, { tag:'h3', style:{ fontSize:18,fontWeight:700,marginBottom:16,color:C.w,fontFamily:F.h }}, "La lección"),
+        React.createElement(E, { tag:'p', style:{ fontSize:14,lineHeight:1.6,marginBottom:20,color:C.t2 }}, "Sustituir el esfuerzo personal de aprender por recopilar opiniones ajenas en la red es el núcleo del timo."),
+        React.createElement('div', { style:{ width:'100%',height:1,marginBottom:20,borderRadius:99,background:C.bdr }}),
+        React.createElement(E, { tag:'p', style:{ fontSize:14,lineHeight:1.6,color:C.t2 }}, "La inteligencia no es solo procesar información: es dirigir bien la acción con valores, perspicacia y ánimo.")))
+    )
+  );
+}
+
+function S12() {
+  return React.createElement('div', { style:{ position:'relative',width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',background:C.bg }},
+    React.createElement(Grid), React.createElement(Glow, { color:C.red,size:700,x:"50%",y:"40%",op:0.07 }), React.createElement(Glow, { color:C.blue,size:500,x:"25%",y:"70%",op:0.04 }),
+    React.createElement('div', { style:{ position:'absolute',top:32,left:32,width:64,height:64,border:`2px solid ${C.red}22`,borderRadius:'16px 0 0 0',borderRight:'none',borderBottom:'none' }}),
+    React.createElement('div', { style:{ position:'absolute',bottom:32,right:32,width:64,height:64,border:`2px solid ${C.red}22`,borderRadius:'0 0 16px 0',borderLeft:'none',borderTop:'none' }}),
+    React.createElement('div', { style:{ position:'relative',zIndex:10,maxWidth:800,padding:'0 64px',textAlign:'center' }},
+      React.createElement(A, null, React.createElement(Tag, null, React.createElement(E, null, "Conclusión"))),
+      React.createElement(A, { d:250 },
+        React.createElement('div', { style:{ marginTop:40,marginBottom:40 }},
+          React.createElement(Ic, { name:"Quote",size:32,color:C.red,style:{ opacity:0.4,margin:'0 auto 24px' }}),
+          React.createElement(E, { tag:'p', style:{ fontWeight:700,fontStyle:'italic',lineHeight:1.5,fontSize:'clamp(1.4rem,2.8vw,2rem)',color:C.w,fontFamily:F.h }}, "Cada vez que alguien sugiere que prescindamos de nuestra memoria personal para confiar en la memoria global del ordenador, nos está incitando a la esclavitud."),
+          React.createElement('div', { style:{ display:'flex',alignItems:'center',justifyContent:'center',gap:16,marginTop:24 }},
+            React.createElement('div', { style:{ width:32,height:2,borderRadius:99,background:C.red }}),
+            React.createElement(E, { tag:'span', style:{ fontSize:14,fontWeight:600,color:C.red,fontFamily:F.m }}, "José Antonio Marina"),
+            React.createElement('div', { style:{ width:32,height:2,borderRadius:99,background:C.red }})))),
+      React.createElement(A, { d:550 },
+        React.createElement('div', { style:{ width:64,height:1,margin:'0 auto 24px',borderRadius:99,background:C.bdr }}),
+        React.createElement(E, { tag:'p', style:{ fontSize:16,lineHeight:1.6,color:C.t2 }}, "La sociedad de la información solo será liberadora si va acompañada de una sociedad del aprendizaje y la autonomía personal.")),
+
+      React.createElement(A, { d:1050 }, React.createElement(Card, { glow:true, style:{ marginTop:32,display:'inline-block',textAlign:'left' }},
+        React.createElement('div', { style:{ fontSize:10,letterSpacing:'0.15em',textTransform:'uppercase',marginBottom:8,color:C.red,fontFamily:F.m }}, "Pregunta de investigación"),
+        React.createElement(E, { tag:'p', style:{ fontSize:14,maxWidth:500,lineHeight:1.6,color:C.t1 }}, "¿De qué manera la sobreabundancia de información digital afecta la capacidad de pensamiento crítico y la autonomía decisoria de los ciudadanos en los procesos democráticos actuales?")))
+    )
+  );
+}
+
+/* ═══════════ MAIN APP ═══════════ */
+const slides = [S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12];
+
+function App() {
+  const [cur, setCur] = useState(0);
+  const [showNav, setShowNav] = useState(true);
+  const [editing] = [false];
+
+  const go = useCallback((n) => { setCur(Math.max(0, Math.min(n, TOTAL-1))); }, []);
+  const next = useCallback(() => go(cur+1), [cur, go]);
+  const prev = useCallback(() => go(cur-1), [cur, go]);
+
+  useEffect(() => {
+    const h = (e) => {
+      if (e.key==="ArrowRight"||e.key===" "||e.key==="Enter") { e.preventDefault(); next(); }
+      if (e.key==="ArrowLeft"||e.key==="Backspace") { e.preventDefault(); prev(); }
+      if (e.key==="Escape") setShowNav(v => !v);
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [next, prev]);
+
+  useEffect(() => { setShowNav(true); const t = setTimeout(() => setShowNav(false), 3500); return () => clearTimeout(t); }, [cur]);
+  useEffect(() => { let t; const h=()=>{setShowNav(true);clearTimeout(t);t=setTimeout(()=>setShowNav(false),3500)}; window.addEventListener("mousemove",h); return ()=>{window.removeEventListener("mousemove",h);clearTimeout(t)}; }, []);
+
+  return React.createElement('div', {
+    style:{ width:'100vw',height:'100vh',overflow:'hidden',position:'relative',userSelect:'none',background:C.bg,cursor:showNav?'default':'none' }
+  },
+    /* ─── NAV CLICK ZONES (separate from content) ─── */
+    React.createElement('div', { onClick:prev, style:{ position:'absolute',top:0,left:0,width:'30%',height:'100%',zIndex:40,cursor:showNav?'w-resize':'none' }}),
+    React.createElement('div', { onClick:next, style:{ position:'absolute',top:0,right:0,width:'30%',height:'100%',zIndex:40,cursor:showNav?'e-resize':'none' }}),
+
+    /* ─── SLIDES: all rendered, only current visible ─── */
+    slides.map((S,i) => React.createElement('div', {
+      key:i,
+      style:{ position:'absolute',inset:0,visibility:cur===i?'visible':'hidden',opacity:cur===i?1:0,transition:'opacity 0.4s ease-out' }
+    }, React.createElement(S))),
+
+    /* ─── CHROME ─── */
+    React.createElement('div', { style:{ position:'fixed',bottom:0,left:0,right:0,zIndex:50,height:3,background:C.dim }},
+      React.createElement('div', { style:{ height:'100%',transition:'all 0.7s ease-out',width:`${((cur+1)/TOTAL)*100}%`,background:`linear-gradient(90deg,${C.blue},${C.red})`,boxShadow:`0 0 20px ${C.redG}` }})),
+    React.createElement('div', { style:{ position:'fixed',bottom:20,right:32,zIndex:50,fontSize:12,letterSpacing:'0.3em',color:C.t3,fontFamily:F.m }},
+      String(cur+1).padStart(2,'0'), React.createElement('span', { style:{ color:C.red }}, "/"), String(TOTAL).padStart(2,'0')),
+    React.createElement('div', { style:{ position:'fixed',bottom:16,left:24,zIndex:50,display:'flex',gap:4,transition:'opacity 0.5s',opacity:showNav?0.5:0 }},
+      React.createElement('button', { onClick:prev, style:{ padding:8,borderRadius:8,border:'none',cursor:'pointer',background:C.dim,display:'flex',alignItems:'center' }}, React.createElement(Ic, { name:"ChevronLeft",size:16,color:C.t2 })),
+      React.createElement('button', { onClick:next, style:{ padding:8,borderRadius:8,border:'none',cursor:'pointer',background:C.dim,display:'flex',alignItems:'center' }}, React.createElement(Ic, { name:"ChevronRight",size:16,color:C.t2 })),
+    ),
+
+  );
+}
+
+ReactDOM.render(React.createElement(App), document.getElementById("root"));
+</script>
+</body>
+</html>
